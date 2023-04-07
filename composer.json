@@ -1,0 +1,40 @@
+{
+    "name": "joelharkes/laravel-model-joins",
+    "description": "Easily join laravel models in query builder",
+    "type": "library",
+    "license": "MIT",
+    "autoload": {
+        "psr-4": {
+            "Joelharkes\\LaravelModelJoins\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Joelharkes\\LaravelModelJoins\\Tests\\": "tests"
+        }
+    },
+    "authors": [
+        {
+            "name": "joelharkes",
+            "email": "jlharkes@gmail.com"
+        }
+    ],
+    "scripts": {
+        "test": "vendor/bin/phpunit"
+    },
+    "require": {
+        "php": "^8.0",
+        "illuminate/database": "^9.0|^10.0"
+    },
+    "require-dev": {
+        "orchestra/testbench": "^7.0|^8.0",
+        "phpunit/phpunit": "^8.0|^9.0"
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Joelharkes\\LaravelModelJoins\\ServiceProvider"
+            ]
+        }
+    }
+}
