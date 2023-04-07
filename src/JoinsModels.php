@@ -117,6 +117,7 @@ class JoinsModels
         return function (string $relation, string $joinType = 'inner', bool $aliasAsRelations = false) {
             // todo make it work with relationName.deeperRelationName.
             $relationClass = Relation::noConstraints(fn () => $this->getModel()->$relation());
+            assert($relationClass instanceof Relation);
             if ($relationClass instanceof HasOneOrMany) {
                 return $this->joinManyOn($this->getModel(), $relationClass->getQuery(), $joinType, $relationClass->getQualifiedParentKeyName(), $relationClass->getForeignKeyName(), $aliasAsRelations ? $relation : null);
             } elseif ($relationClass instanceof BelongsTo) {

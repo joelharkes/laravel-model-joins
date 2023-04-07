@@ -21,8 +21,8 @@ composer require joelharkes/laravel-model-joins
 examples:
 ```php
 User::query()->joinMany(Transaction::class);
-User::query()->joinMany(Transaction::query()->withoutTrashed());
-Transaction::query()->joinOne(User::class);
+$post->user()->joinMany(Transaction::query()->withoutTrashed());
+Transaction::query()->joinOne(User::class, type: 'left');
 Transaction::query()->joinOne(User::query()->where('is_manager', true));
 ```
 
