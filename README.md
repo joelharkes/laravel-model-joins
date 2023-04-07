@@ -1,7 +1,7 @@
 # Laravel Model joins
 
 [![Latest Version on Packagist](https://img.shields.io/packagist/v/joelharkes/laravel-model-joins.svg?style=flat-square)](https://packagist.org/packages/joelharkes/laravel-model-joins)
-[![Build status](https://github.com/joelharkes/laravel-model-joins/actions/workflows/run-tests.yml/badge.svg)](https://github.com/joelharkes/laravel-model-joins/actions/workflows/run-tests.yml)
+[![Build status](https://github.com/joelharkes/laravel-model-joins/actions/workflows/tests.yml/badge.svg)](https://github.com/joelharkes/laravel-model-joins/actions/workflows/tests.yml)
 [![Total Downloads](https://img.shields.io/packagist/dt/joelharkes/laravel-model-joins.svg?style=flat-square)](https://packagist.org/packages/joelharkes/laravel-model-joins)
 
 ```php
