@@ -21,7 +21,6 @@ class JoinsModelsTest extends TestCase
         $this->assertSame('select * from "blogs" inner join "comments" on "comments"."blog_id" = "blogs"."id"', $query);
     }
 
-
     public function testSimpleHasManyForRelation()
     {
         $blog = new Blog();
@@ -30,7 +29,6 @@ class JoinsModelsTest extends TestCase
         $this->assertSame('select * from "blogs" inner join "comments" on "comments"."blog_id" = "blogs"."id"', $query);
     }
 
-
     public function testJoinRelation()
     {
         $blog = new Blog();
@@ -38,7 +36,6 @@ class JoinsModelsTest extends TestCase
         $query = $blog->newQuery()->joinRelation('comments')->toSql();
         $this->assertSame('select * from "blogs" inner join "comments" on "comments"."blog_id" = "blogs"."id"', $query);
     }
-
 
     public function testJoinRelationWithAlias()
     {
@@ -97,24 +94,31 @@ class JoinsModelsTest extends TestCase
     }
 }
 
-
-class Blog extends Model {
-    public function comments(){
+class Blog extends Model
+{
+    public function comments()
+    {
         return $this->hasMany(Comment::class);
     }
 
-    public function notes(){
+    public function notes()
+    {
         return $this->hasMany(Comment::class);
     }
 }
-class Comment extends Model {
-    public function blog(){
+class Comment extends Model
+{
+    public function blog()
+    {
         return $this->belongsTo(Blog::class);
     }
 }
-class User extends Model {}
+class User extends Model
+{
+}
 
-class DeletableComment extends Model {
+class DeletableComment extends Model
+{
     use SoftDeletes;
 }
 

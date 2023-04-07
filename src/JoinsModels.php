@@ -1,6 +1,7 @@
 <?php
 
 declare(strict_types=1);
+
 namespace Joelharkes\LaravelModelJoins;
 
 use Illuminate\Database\Eloquent\Builder;
@@ -17,11 +18,12 @@ use Illuminate\Support\Str;
  */
 class JoinsModels
 {
-    public function joinMany()  {
+    public function joinMany()
+    {
         /**
-         * @param class-string<Model>|Model|Builder<Model> $model
-         * @param string $joinType
-         * @param string|null $overrideJoinColumnName
+         * @param  class-string<Model>|Model|Builder<Model>  $model
+         * @param  string  $joinType
+         * @param  string|null  $overrideJoinColumnName
          * @return static
          */
         return function ($model, string $joinType = 'inner', ?string $overrideJoinColumnName = null, ?string $tableAlias = null): static {
@@ -37,12 +39,12 @@ class JoinsModels
         };
     }
 
-
-    public function joinOne() {
+    public function joinOne()
+    {
         /**
-         * @param class-string|Model|Builder<Model> $model
-         * @param string $joinType
-         * @param string|null $overrideBaseColumn
+         * @param  class-string|Model|Builder<Model>  $model
+         * @param  string  $joinType
+         * @param  string|null  $overrideBaseColumn
          * @return static
          */
         return function ($model, string $joinType = 'inner', ?string $overrideBaseColumn = null, ?string $tableAlias = null): static {
@@ -59,22 +61,20 @@ class JoinsModels
         };
     }
 
-
     public function joinManyOn()
     {
         return function (Model $baseModel, Builder $builderToJoin, ?string $joinType = 'inner', ?string $overrideBaseColumnName = null, ?string $overrideJoinColumnName = null, ?string $tableAlias = null): static {
             $modelToJoin = $builderToJoin->getModel();
-            $aliasToUse = $tableAlias ? ($modelToJoin->getTable() . ' as ' . $tableAlias) : $modelToJoin->getTable();
-            if($tableAlias){
+            $aliasToUse = $tableAlias ? ($modelToJoin->getTable().' as '.$tableAlias) : $modelToJoin->getTable();
+            if ($tableAlias) {
                 // override table name to properly qualify table names.
                 // todo decide if need to reset after join to avoid weird side effects.
                 $modelToJoin->setTable($tableAlias);
             }
-            $manyJoinColumnName = $overrideJoinColumnName ?? (Str::singular($baseModel->getTable()). '_' . $baseModel->getKeyName());
+            $manyJoinColumnName = $overrideJoinColumnName ?? (Str::singular($baseModel->getTable()).'_'.$baseModel->getKeyName());
             $baseColumnName = $overrideBaseColumnName ?? $baseModel->getKeyName();
             $this->join(
-                $aliasToUse, fn(JoinClause $join) =>
-                $join->on(
+                $aliasToUse, fn (JoinClause $join) => $join->on(
                     $modelToJoin->qualifyColumn($manyJoinColumnName),
                     '=',
                     $baseModel->qualifyColumn($baseColumnName),
@@ -90,17 +90,16 @@ class JoinsModels
     {
         return function (Model $baseModel, Builder $builderToJoin, string $joinType = 'inner', string $overrideBaseColumnName = null, string $overrideJoinColumnName = null, ?string $tableAlias = null): static {
             $modelToJoin = $builderToJoin->getModel();
-            $aliasToUse = $tableAlias ? ($modelToJoin->getTable() . ' as ' . $tableAlias) : $modelToJoin->getTable();
-            if($tableAlias){
+            $aliasToUse = $tableAlias ? ($modelToJoin->getTable().' as '.$tableAlias) : $modelToJoin->getTable();
+            if ($tableAlias) {
                 // override table name to properly qualify table names.
                 // todo decide if need to reset after join to avoid weird side effects.
                 $modelToJoin->setTable($tableAlias);
             }
             $joinColumnName = $overrideBaseColumnName ?? $modelToJoin->getKeyName();
-            $baseColumnName = $overrideJoinColumnName ?? (Str::singular($modelToJoin->getTable()). '_' . $modelToJoin->getKeyName());
+            $baseColumnName = $overrideJoinColumnName ?? (Str::singular($modelToJoin->getTable()).'_'.$modelToJoin->getKeyName());
             $this->join(
-                $aliasToUse, fn(JoinClause $join) =>
-            $join->on(
+                $aliasToUse, fn (JoinClause $join) => $join->on(
                 $modelToJoin->qualifyColumn($joinColumnName),
                 '=',
                 $baseModel->qualifyColumn($baseColumnName),
@@ -108,46 +107,49 @@ class JoinsModels
                 type: $joinType
             );
             $this->applyScopesWith($builderToJoin->getScopes(), $modelToJoin);
+
             return $this;
         };
     }
 
     public function joinRelation()
     {
-        return function (string $relation, string $joinType = 'inner', bool $aliasAsRelations = false){
+        return function (string $relation, string $joinType = 'inner', bool $aliasAsRelations = false) {
             // todo make it work with relationName.deeperRelationName.
-            $relationClass = Relation::noConstraints(fn()=> $this->getModel()->$relation());
-            if($relationClass instanceof HasOneOrMany){
-                return $this->joinManyOn($this->getModel(), $relationClass->getQuery(), $joinType, $relationClass->getQualifiedParentKeyName(),$relationClass->getForeignKeyName(), $aliasAsRelations ? $relation : null);
-            } elseif($relationClass instanceof BelongsTo){
+            $relationClass = Relation::noConstraints(fn () => $this->getModel()->$relation());
+            if ($relationClass instanceof HasOneOrMany) {
+                return $this->joinManyOn($this->getModel(), $relationClass->getQuery(), $joinType, $relationClass->getQualifiedParentKeyName(), $relationClass->getForeignKeyName(), $aliasAsRelations ? $relation : null);
+            } elseif ($relationClass instanceof BelongsTo) {
                 return $this->joinOneOn($this->getModel(), $relationClass->getQuery(), $joinType, null, $relationClass->getForeignKeyName(), $aliasAsRelations ? $relation : null);
 
             }
+
             return $this;
         };
     }
-
 
     public function applyScopesWith()
     {
         /**
-         * @param Scope[] $scopes
-         * @param Model $model
+         * @param  Scope[]  $scopes
+         * @param  Model  $model
          * @return static
          */
-        return function (array $scopes, Model $model){
-            foreach($scopes as $scope){
+        return function (array $scopes, Model $model) {
+            foreach ($scopes as $scope) {
                 $scope->apply($this, $model);
             }
+
             return $this;
         };
     }
 
-    public function getScopes() {
+    public function getScopes()
+    {
         /**
          * @return array<Scope>
          */
-        return function (){
+        return function () {
             return $this->scopes;
         };
     }
