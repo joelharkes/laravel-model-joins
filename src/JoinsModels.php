@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Relations\HasOneOrMany;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Database\Eloquent\Scope;
 use Illuminate\Database\Query\JoinClause;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
 
 /**
@@ -115,14 +116,22 @@ class JoinsModels
     public function joinRelation()
     {
         return function (string $relation, string $joinType = 'inner', bool $aliasAsRelations = false) {
-            // todo make it work with relationName.deeperRelationName.
-            $relationClass = Relation::noConstraints(fn () => $this->getModel()->$relation());
-            assert($relationClass instanceof Relation);
-            if ($relationClass instanceof HasOneOrMany) {
-                return $this->joinManyOn($this->getModel(), $relationClass->getQuery(), $joinType, $relationClass->getQualifiedParentKeyName(), $relationClass->getForeignKeyName(), $aliasAsRelations ? $relation : null);
-            } elseif ($relationClass instanceof BelongsTo) {
-                return $this->joinOneOn($this->getModel(), $relationClass->getQuery(), $joinType, null, $relationClass->getForeignKeyName(), $aliasAsRelations ? $relation : null);
+            $relationsToJoin = str($relation)->explode('.');
+            $contextQuery = $this;
 
+            foreach ($relationsToJoin as $relationName){
+                $relationClass = Relation::noConstraints(fn () => $contextQuery->getModel()->$relationName());
+                $queryToJoin = $relationClass->getQuery();
+                assert($relationClass instanceof Relation);
+
+                if ($relationClass instanceof HasOneOrMany) {
+                    $this->joinManyOn($contextQuery->getModel(), $queryToJoin, $joinType, $relationClass->getQualifiedParentKeyName(), $relationClass->getForeignKeyName(), $aliasAsRelations ? $relationName : null);
+                } elseif ($relationClass instanceof BelongsTo) {
+                    $this->joinOneOn($contextQuery->getModel(), $queryToJoin, $joinType, null, $relationClass->getForeignKeyName(), $aliasAsRelations ? $relationName : null);
+                }
+
+                // The model in this query builder should now be properly aliased for next usage.
+                $contextQuery = $queryToJoin;
             }
 
             return $this;

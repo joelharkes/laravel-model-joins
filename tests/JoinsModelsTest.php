@@ -45,6 +45,14 @@ class JoinsModelsTest extends TestCase
         $this->assertSame('select * from "blogs" inner join "comments" as "notes" on "notes"."blog_id" = "blogs"."id"', $query);
     }
 
+    public function testJoinRelationWithAliasAndSubJoin()
+    {
+        $blog = new Blog();
+        $blog->id = 123;
+        $query = $blog->newQuery()->joinRelation('notes.user', aliasAsRelations: true)->toSql();
+        $this->assertSame('select * from "blogs" inner join "comments" as "notes" on "notes"."blog_id" = "blogs"."id" inner join "users" as "user" on "user"."id" = "notes"."user_id"', $query);
+    }
+
     public function testJoinOneRelationWith()
     {
         $blog = new Blog();
@@ -111,6 +119,10 @@ class Comment extends Model
     public function blog()
     {
         return $this->belongsTo(Blog::class);
+    }
+
+    public function user(){
+        return $this->belongsTo(User::class);
     }
 }
 class User extends Model
