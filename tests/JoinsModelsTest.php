@@ -100,6 +100,34 @@ class JoinsModelsTest extends TestCase
         $query = $blog->comments()->joinOne(User::class)->toSql();
         $this->assertSame('select * from "comments" inner join "users" on "users"."id" = "comments"."user_id" where "comments"."blog_id" is null and "comments"."blog_id" is not null', $query);
     }
+
+    public function testJoiningThroughMany()
+    {
+        $blog = new User();
+        $query = $blog->query()->joinRelation('commentsOnBlogs')->toSql();
+        $this->assertSame('select * from "users" inner join "blogs" on "blogs"."user_id" = "users"."id" inner join "comments" on "comments"."blog_id" = "blogs"."id"', $query);
+    }
+
+    public function testJoiningThroughManyWithAlias()
+    {
+        $blog = new User();
+        $query = $blog->query()->joinRelation('commentsOnBlogs', 'inner', true)->toSql();
+        $this->assertSame('select * from "users" inner join "blogs" as "commentsOnBlogs_through" on "commentsOnBlogs_through"."user_id" = "users"."id" inner join "comments" as "commentsOnBlogs" on "commentsOnBlogs"."blog_id" = "commentsOnBlogs_through"."id"', $query);
+    }
+
+    public function testJoiningThroughManyDeletableScopeOnFinal()
+    {
+        $blog = new User();
+        $query = $blog->query()->joinRelation('deletableCommentsOnBlogs')->toSql();
+        $this->assertSame('select * from "users" inner join "blogs" on "blogs"."user_id" = "users"."id" inner join "deletable_comments" on "deletable_comments"."blog_id" = "blogs"."id" and ("deletable_comments"."deleted_at" is null)', $query);
+    }
+
+    public function testJoiningThroughManyScopeOnThrough()
+    {
+        $blog = new User();
+        $query = $blog->query()->joinRelation('commentsOnDeletableBlogs')->toSql();
+        $this->assertSame('select * from "users" inner join "deletable_blogs" on "deletable_blogs"."user_id" = "users"."id" and ("deletable_blogs"."deleted_at" is null) inner join "comments" on "comments"."deletable_blog_id" = "deletable_blogs"."id"', $query);
+    }
 }
 
 class Blog extends Model
@@ -112,6 +140,10 @@ class Blog extends Model
     public function notes()
     {
         return $this->hasMany(Comment::class);
+    }
+
+    public function user(){
+        return $this->belongsTo(User::class);
     }
 }
 class Comment extends Model
@@ -127,9 +159,29 @@ class Comment extends Model
 }
 class User extends Model
 {
+    public function commentsOnBlogs(){
+        return $this->hasManyThrough(Comment::class, Blog::class);
+    }
+
+    public function allComments(){
+        return $this->hasManyThrough(Comment::class, Blog::class);
+    }
+
+    public function deletableCommentsOnBlogs(){
+        return $this->hasManyThrough(DeletableComment::class, Blog::class);
+    }
+
+    public function commentsOnDeletableBlogs(){
+        return $this->hasManyThrough(Comment::class, DeletableBlog::class);
+    }
 }
 
 class DeletableComment extends Model
+{
+    use SoftDeletes;
+}
+
+class DeletableBlog extends Model
 {
     use SoftDeletes;
 }

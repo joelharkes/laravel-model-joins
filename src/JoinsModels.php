@@ -7,6 +7,7 @@ namespace Joelharkes\LaravelModelJoins;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Illuminate\Database\Eloquent\Relations\HasOneOrMany;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Database\Eloquent\Scope;
@@ -121,13 +122,34 @@ class JoinsModels
 
             foreach ($relationsToJoin as $relationName){
                 $relationClass = Relation::noConstraints(fn () => $contextQuery->getModel()->$relationName());
-                $queryToJoin = $relationClass->getQuery();
                 assert($relationClass instanceof Relation);
+                $queryToJoin = $relationClass->getQuery();
 
-                if ($relationClass instanceof HasOneOrMany) {
-                    $this->joinManyOn($contextQuery->getModel(), $queryToJoin, $joinType, $relationClass->getQualifiedParentKeyName(), $relationClass->getForeignKeyName(), $aliasAsRelations ? $relationName : null);
-                } elseif ($relationClass instanceof BelongsTo) {
-                    $this->joinOneOn($contextQuery->getModel(), $queryToJoin, $joinType, null, $relationClass->getForeignKeyName(), $aliasAsRelations ? $relationName : null);
+                match(true){
+                    $relationClass instanceof HasOneOrMany => $this->joinManyOn($contextQuery->getModel(), $queryToJoin, $joinType, $relationClass->getQualifiedParentKeyName(), $relationClass->getForeignKeyName(), $aliasAsRelations ? $relationName : null),
+                    $relationClass instanceof BelongsTo => $this->joinOneOn($contextQuery->getModel(), $queryToJoin, $joinType, null, $relationClass->getForeignKeyName(), $aliasAsRelations ? $relationName : null),
+                    $relationClass instanceof HasManyThrough => null, // handled below
+                    default => throw new \Exception('Unsupported relation type: '.get_class($relationClass).'.'),
+                };
+
+                if($relationClass instanceof HasManyThrough){
+                    // first is through
+                    // second is related, final destination
+
+                    $firstQuery = $relationClass->getThroughParent()->query();
+                    assert($firstQuery instanceof Builder);
+                    if($relationClass->throughParentSoftDeletes()){
+                        // todo figure out if this should be done to more scopes.
+                        if(array_key_exists('SoftDeletableHasManyThrough', $queryToJoin->removedScopes())) {
+                            $firstQuery->withTrashed();
+                        } else {
+                            $queryToJoin->withoutGlobalScope('SoftDeletableHasManyThrough');
+                        }
+                    }
+                    // todo: figure out a better alias for this.
+                    $throughAlias = $relationName. '_through';
+                    $this->joinManyOn($contextQuery->getModel(), $firstQuery, $joinType, $relationClass->getLocalKeyName(), $relationClass->getFirstKeyName(), $aliasAsRelations ? $throughAlias : null);
+                    $this->joinManyOn($firstQuery->getModel(), $queryToJoin, $joinType, $relationClass->getSecondLocalKeyName(), $relationClass->getForeignKeyName(), $aliasAsRelations ? $relationName : null);
                 }
 
                 // The model in this query builder should now be properly aliased for next usage.
@@ -135,6 +157,12 @@ class JoinsModels
             }
 
             return $this;
+        };
+    }
+
+    public function selectBase(){
+        return function (){
+            return $this->select($this->getModel()->getTable().'.*');
         };
     }
 
